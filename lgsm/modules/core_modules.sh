@@ -181,6 +181,11 @@ command_wipe.sh() {
 	fn_fetch_module
 }
 
+command_gmod_addonupdate.sh() {
+	modulefile="${FUNCNAME[0]}"
+	fn_fetch_module
+}
+
 install_squad_license.sh() {
 	modulefile="${FUNCNAME[0]}"
 	fn_fetch_module
