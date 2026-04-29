@@ -44,13 +44,17 @@ fn_gmod_addonupdate() {
 		fn_print_dots "Updating ${addon_name}"
 		fn_script_log_info "Pulling changes for addon: ${addon_name}"
 
-		if git -C "${repo_dir}" pull --no-edit > /dev/null 2>&1; then
+		local git_output
+		git_output=$(git -C "${repo_dir}" pull --no-edit 2>&1)
+		if [ $? -eq 0 ]; then
 			fn_print_ok_eol_nl
 			fn_script_log_pass "${addon_name} updated successfully"
 			((update_count++))
 		else
 			fn_print_fail_eol_nl
 			fn_script_log_error "${addon_name} failed to update"
+			fn_script_log_error "${git_output}"
+			echo -e "${git_output}"
 			((fail_count++))
 		fi
 	done <<< "${git_dirs}"
