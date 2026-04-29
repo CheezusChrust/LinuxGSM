@@ -42,7 +42,7 @@ fn_stop_graceful_ctrlc() {
 
 # Attempts graceful shutdown by sending a specified command.
 # Usage: fn_stop_graceful_cmd "console_command" "timeout_in_seconds"
-# e.g.: fn_stop_graceful_cmd "quit" "30"
+# e.g.: fn_stop_graceful_cmd "quit" "10"
 fn_stop_graceful_cmd() {
 	fn_print_dots "Graceful: sending \"${1}\""
 	fn_script_log_info "Graceful: sending \"${1}\""
@@ -323,7 +323,7 @@ fn_stop_graceful_select() {
 	elif [ "${stopmode}" == "2" ]; then
 		fn_stop_graceful_ctrlc
 	elif [ "${stopmode}" == "3" ]; then
-		fn_stop_graceful_cmd "quit" 30
+		fn_stop_graceful_cmd "quit" 10
 	elif [ "${stopmode}" == "4" ]; then
 		fn_stop_graceful_cmd "quit" 120
 	elif [ "${stopmode}" == "5" ]; then

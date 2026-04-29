@@ -29,6 +29,19 @@ fn_monitor_check_monitoring() {
 	fi
 }
 
+fn_monitor_check_running() {
+	# Exit if another monitor instance for this server is already running.
+	if [ "$(pgrep -fc -u "${USER}" "/bin/bash ./${selfname} monitor")" -gt "1" ] || [ "$(pgrep -fc -u "${USER}" "/bin/bash ./${selfname} m")" -gt "1" ]; then
+		fn_print_dots "Checking monitor"
+		fn_print_checking_eol
+		fn_script_log_info "Checking monitor: CHECKING"
+		fn_print_info "Checking monitor: Monitor is already running"
+		fn_print_info_eol_nl
+		fn_script_log_info "Checking monitor: Monitor is already running"
+		core_exit.sh
+	fi
+}
+
 fn_monitor_check_install() {
 	if [ "$(pgrep -fc -u "${USER}" "/bin/bash ./${selfname} install")" != "0" ] || [ "$(pgrep -fcx -u "${USER}" "/bin/bash ./${selfname} i")" != "0" ] || [ "$(pgrep -fcx -u "${USER}" "/bin/bash ./${selfname} auto-install")" != "0" ] || [ "$(pgrep -fcx -u "${USER}" "/bin/bash ./${selfname} ai")" != "0" ]; then
 		fn_print_dots "Checking installer"
@@ -261,8 +274,8 @@ fn_query_tcp() {
 }
 
 fn_monitor_query() {
-	# Will loop and query up to 5 times every 15 seconds.
-	# Query will wait up to 60 seconds to confirm server is down as server can become non-responsive during map changes.
+	# Will loop and query up to 5 times every 5 seconds.
+	# Query will wait up to 20 seconds to confirm server is down as server can become non-responsive during map changes.
 	totalseconds=0
 	for queryattempt in {1..5}; do
 		for queryip in "${queryips[@]}"; do
@@ -326,10 +339,10 @@ fn_monitor_query() {
 				fn_print_fail "Querying port: ${querymethod}: ${queryip}:${queryport} : ${totalseconds}/${queryattempt}"
 				fn_print_fail_eol
 				fn_script_log_warn "Querying port: ${querymethod}: ${queryip}:${queryport} : ${queryattempt} : FAIL"
-				# Monitor will try gamedig (if supported) for first 30s then gsquery before restarting.
-				# gsquery will fail if longer than 60s
-				if [ "${totalseconds}" -ge "59" ]; then
-					# Monitor will FAIL if over 60s and trigger gane server reboot.
+				# Monitor will try gamedig (if supported) for first 10s then gsquery before restarting.
+				# gsquery will fail if longer than 20s
+				if [ "${totalseconds}" -ge "19" ]; then
+					# Monitor will FAIL if over 20s and trigger game server reboot.
 					fn_print_fail "Querying port: ${querymethod}: ${queryip}:${queryport} : ${totalseconds}/${queryattempt}"
 					fn_print_fail_eol_nl
 					fn_script_log_warn "Querying port: ${querymethod}: ${queryip}:${queryport} : ${queryattempt} : FAIL"
@@ -342,13 +355,13 @@ fn_monitor_query() {
 				fi
 			fi
 		done
-		# Second counter will wait for 15s before breaking loop.
-		for seconds in {1..15}; do
+		# Second counter will wait for 5s before breaking loop.
+		for seconds in {1..5}; do
 			fn_print_fail "Querying port: ${querymethod}: ${ip}:${queryport} : ${totalseconds}/${queryattempt}"
 			fn_print_wait_eol
 			fn_sleep_time_1
 			totalseconds=$((totalseconds + 1))
-			if [ "${seconds}" == "15" ]; then
+			if [ "${seconds}" == "5" ]; then
 				break
 			fi
 		done
@@ -390,6 +403,7 @@ fn_monitor_loop() {
 fn_print_dots ""
 monitorflag=1
 # Dont do any monitoring or checks if installer is running.
+fn_monitor_check_running
 fn_monitor_check_install
 check.sh
 core_logs.sh

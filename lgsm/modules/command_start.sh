@@ -189,6 +189,11 @@ fix.sh
 info_game.sh
 core_logs.sh
 
+# Update GMod git-based addons before starting.
+if [ "${shortname}" == "gmod" ]; then
+	command_gmod_addonupdate.sh
+fi
+
 # Will check for updates if updateonstart is yes.
 if [ "${updateonstart}" == "yes" ] || [ "${updateonstart}" == "1" ] || [ "${updateonstart}" == "on" ]; then
 	exitbypass=1
