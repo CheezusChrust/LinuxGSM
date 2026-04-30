@@ -3,7 +3,7 @@
 # Description: Updates Garry's Mod addons installed via git by running git pull on each.
 
 commandname="GMOD-ADDONUPDATE"
-commandaction="Updating GMod Addons"
+commandaction="Updating Git Addons"
 moduleselfname="$(basename "$(readlink -f "${BASH_SOURCE[0]}")")"
 fn_firstcommand_set
 
