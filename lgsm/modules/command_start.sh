@@ -192,6 +192,7 @@ core_logs.sh
 # Update GMod git-based addons before starting.
 if [ "${shortname}" == "gmod" ]; then
 	command_gmod_addonupdate.sh
+	commandaction="Starting"
 fi
 
 # Will check for updates if updateonstart is yes.
