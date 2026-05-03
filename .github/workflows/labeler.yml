@@ -157,6 +157,24 @@ jobs:
                 .filter(Boolean);
             }
 
+            function findGamesFromText(text, gameAliasToLabel, gameAliasToScript) {
+              const labels = new Set();
+              const scripts = new Set();
+              const normalizedText = normalizeName(text);
+              if (!normalizedText) return { labels, scripts };
+
+              const paddedText = ` ${normalizedText} `;
+              for (const [alias, label] of gameAliasToLabel.entries()) {
+                if (alias.length < 3) continue;
+                if (!paddedText.includes(` ${alias} `)) continue;
+                labels.add(label);
+                const mappedScript = gameAliasToScript.get(alias);
+                if (mappedScript) scripts.add(mappedScript);
+              }
+
+              return { labels, scripts };
+            }
+
             function parseServerlistCsv(csvText) {
               const rows = [];
               const lines = (csvText || '').split(/\r?\n/);
@@ -416,6 +434,13 @@ jobs:
               if (mapped) desiredGames.add(mapped);
               const mappedScript = gameAliasToScript.get(normalizedCandidate);
               if (mappedScript) desiredServerScripts.add(mappedScript);
+            }
+
+            // Legacy issues often have no form section; fall back to deterministic text matching.
+            if (desiredGames.size === 0) {
+              const fromText = findGamesFromText(`${title}\n${body}`, gameAliasToLabel, gameAliasToScript);
+              for (const label of fromText.labels) desiredGames.add(label);
+              for (const scriptName of fromText.scripts) desiredServerScripts.add(scriptName);
             }
 
             // AI advisory is only needed on issue opened/edited.
@@ -900,6 +925,24 @@ jobs:
                 .filter(Boolean);
             }
 
+            function findGamesFromText(text, gameAliasToLabel, gameAliasToScript) {
+              const labels = new Set();
+              const scripts = new Set();
+              const normalizedText = normalizeName(text);
+              if (!normalizedText) return { labels, scripts };
+
+              const paddedText = ` ${normalizedText} `;
+              for (const [alias, label] of gameAliasToLabel.entries()) {
+                if (alias.length < 3) continue;
+                if (!paddedText.includes(` ${alias} `)) continue;
+                labels.add(label);
+                const mappedScript = gameAliasToScript.get(alias);
+                if (mappedScript) scripts.add(mappedScript);
+              }
+
+              return { labels, scripts };
+            }
+
             function parseServerlistCsv(csvText) {
               const rows = [];
               const lines = (csvText || '').split(/\r?\n/);
@@ -1203,6 +1246,14 @@ jobs:
                   const mappedScript = gameAliasToScript.get(normalizedCandidate);
                   if (mappedScript) desiredServerScripts.add(mappedScript);
                 }
+
+                // Legacy issues often have no form section; fall back to deterministic text matching.
+                if (desiredGames.size === 0) {
+                  const fromText = findGamesFromText(`${title}\n${body}`, gameAliasToLabel, gameAliasToScript);
+                  for (const label of fromText.labels) desiredGames.add(label);
+                  for (const scriptName of fromText.scripts) desiredServerScripts.add(scriptName);
+                }
+
                 for (const gameLabel of desiredGames) {
                   const mappedScript = gameAliasToScript.get(normalizeName(gameLabel.slice(6)));
                   if (mappedScript) desiredServerScripts.add(mappedScript);
