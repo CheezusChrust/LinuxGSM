@@ -175,6 +175,7 @@ jobs:
             }
             function inferTypeFromTitle(issueTitle) {
               if (/^\[bug\]/i.test(issueTitle)) return 'type: bug';
+              if (/\bserver\s+request\b/i.test(issueTitle)) return 'type: game server request';
               if (/^\[feature\]/i.test(issueTitle)) return 'type: feature';
               if (/^\[server request\]/i.test(issueTitle)) return 'type: game server request';
               if (/^\[docs?\]/i.test(issueTitle)) return 'type: docs';
@@ -184,6 +185,9 @@ jobs:
             function inferDesiredType(issueTitle, labelNames) {
               const titleType = inferTypeFromTitle(issueTitle);
               if (titleType) return titleType;
+
+              // Prefer server requests over generic feature when both labels exist.
+              if (labelNames.has('type: game server request')) return 'type: game server request';
 
               for (const label of [
                 'type: bug',
@@ -907,6 +911,7 @@ jobs:
 
             function inferTypeFromTitle(issueTitle) {
               if (/^\[bug\]/i.test(issueTitle)) return 'type: bug';
+              if (/\bserver\s+request\b/i.test(issueTitle)) return 'type: game server request';
               if (/^\[feature\]/i.test(issueTitle)) return 'type: feature';
               if (/^\[server request\]/i.test(issueTitle)) return 'type: game server request';
               if (/^\[docs?\]/i.test(issueTitle)) return 'type: docs';
@@ -916,6 +921,10 @@ jobs:
             function inferDesiredType(issueTitle, labelNames) {
               const titleType = inferTypeFromTitle(issueTitle);
               if (titleType) return titleType;
+
+              // Prefer server requests over generic feature when both labels exist.
+              if (labelNames.has('type: game server request')) return 'type: game server request';
+
               for (const label of [
                 'type: bug',
                 'type: feature',
