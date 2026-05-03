@@ -436,7 +436,9 @@ jobs:
             const desiredGames = new Set();
             const desiredServerScripts = new Set();
             const gameField = extractSection('Game');
-            for (const candidate of parseGameCandidates(gameField)) {
+            const gameCandidates = parseGameCandidates(gameField);
+            const hasStructuredGameSelection = gameCandidates.length > 0;
+            for (const candidate of gameCandidates) {
               const normalizedCandidate = normalizeName(candidate);
               const mapped = gameAliasToLabel.get(normalizedCandidate) || gameLabelByNormalized.get(normalizedCandidate);
               if (mapped) desiredGames.add(mapped);
@@ -576,9 +578,11 @@ jobs:
 
             if (desiredGames.size > 0) {
               for (const label of desiredGames) labelsToAdd.add(label);
-              for (const label of existingLabels) {
-                if (label.startsWith('game: ') && !desiredGames.has(label)) {
-                  labelsToRemove.add(label);
+              if (hasStructuredGameSelection) {
+                for (const label of existingLabels) {
+                  if (label.startsWith('game: ') && !desiredGames.has(label)) {
+                    labelsToRemove.add(label);
+                  }
                 }
               }
             }
@@ -1277,7 +1281,9 @@ jobs:
                 const desiredGames = new Set();
                 const desiredServerScripts = new Set();
                 const gameField = extractSection(body, 'Game');
-                for (const candidate of parseGameCandidates(gameField)) {
+                const gameCandidates = parseGameCandidates(gameField);
+                const hasStructuredGameSelection = gameCandidates.length > 0;
+                for (const candidate of gameCandidates) {
                   const normalizedCandidate = normalizeName(candidate);
                   const mapped =
                     gameAliasToLabel.get(normalizedCandidate) || gameLabelByNormalized.get(normalizedCandidate);
@@ -1375,8 +1381,10 @@ jobs:
 
                 if (desiredGames.size > 0) {
                   for (const label of desiredGames) labelsToAdd.add(label);
-                  for (const label of existingLabels) {
-                    if (label.startsWith('game: ') && !desiredGames.has(label)) labelsToRemove.add(label);
+                  if (hasStructuredGameSelection) {
+                    for (const label of existingLabels) {
+                      if (label.startsWith('game: ') && !desiredGames.has(label)) labelsToRemove.add(label);
+                    }
                   }
                 }
 
