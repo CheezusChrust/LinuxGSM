@@ -16,6 +16,14 @@ on:
         required: true
         default: "0"
         type: string
+      ai_game_fallback:
+        description: Use AI only when deterministic game mapping finds no game
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
   issues:
     types:
       - opened
@@ -893,9 +901,12 @@ jobs:
     env:
       ISSUE_STATE: ${{ inputs.issue_state }}
       ISSUE_LIMIT: ${{ inputs.limit }}
+      AI_GAME_FALLBACK: ${{ inputs.ai_game_fallback }}
     steps:
       - name: Trigger relabel backfill
         uses: actions/github-script@v9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const owner = context.repo.owner;
@@ -903,8 +914,11 @@ jobs:
             const state = process.env.ISSUE_STATE || 'all';
             const rawLimit = Number.parseInt(process.env.ISSUE_LIMIT || '0', 10);
             const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 0;
+            const useAiGameFallback = String(process.env.AI_GAME_FALLBACK || 'false').toLowerCase() === 'true';
             const processedIssues = [];
             const failedIssues = [];
+            let aiGameAttempts = 0;
+            let aiGameMatches = 0;
 
             // === Helpers (mirrored from issue-ai-maintenance) ===
 
@@ -941,6 +955,31 @@ jobs:
               }
 
               return { labels, scripts };
+            }
+
+            function parseAiGameResponse(raw) {
+              const input = (raw || '').trim();
+              if (!input) return {};
+
+              const candidates = [input];
+              const fenced = input.match(/```(?:json)?\s*([\s\S]*?)```/i);
+              if (fenced?.[1]) candidates.push(fenced[1].trim());
+
+              const firstBrace = input.indexOf('{');
+              const lastBrace = input.lastIndexOf('}');
+              if (firstBrace !== -1 && lastBrace > firstBrace) {
+                candidates.push(input.slice(firstBrace, lastBrace + 1));
+              }
+
+              for (const candidate of candidates) {
+                try {
+                  return JSON.parse(candidate);
+                } catch (_err) {
+                  // Continue trying fallbacks.
+                }
+              }
+
+              return {};
             }
 
             function parseServerlistCsv(csvText) {
@@ -1254,6 +1293,65 @@ jobs:
                   for (const scriptName of fromText.scripts) desiredServerScripts.add(scriptName);
                 }
 
+                // Optional AI fallback for legacy issues where deterministic matching finds nothing.
+                if (useAiGameFallback && desiredGames.size === 0) {
+                  aiGameAttempts += 1;
+                  try {
+                    const res = await fetch(
+                      `https://models.github.ai/orgs/${owner}/inference/chat/completions`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          Accept: 'application/vnd.github+json',
+                          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                          'X-GitHub-Api-Version': '2026-03-10',
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          model: 'openai/gpt-4.1-mini',
+                          temperature: 0.1,
+                          max_tokens: 120,
+                          messages: [
+                            {
+                              role: 'system',
+                              content:
+                                'Return JSON only. Identify the game referenced in this LinuxGSM issue with high precision.',
+                            },
+                            {
+                              role: 'user',
+                              content:
+                                `Title: ${title}\n\nBody:\n${body.slice(0, 2500)}\n\n` +
+                                'Return JSON: {"detected_game":"string or null","game_confidence":"high|medium|low|null"}',
+                            },
+                          ],
+                        }),
+                      }
+                    );
+
+                    if (res.ok) {
+                      const data = await res.json();
+                      const raw = data.choices?.[0]?.message?.content || '{}';
+                      const parsed = parseAiGameResponse(raw);
+                      const detectedGame = normalizeName(parsed?.detected_game || '');
+                      const confidence = (parsed?.game_confidence || '').toLowerCase();
+                      if (detectedGame && confidence === 'high') {
+                        const mappedLabel =
+                          gameAliasToLabel.get(detectedGame) || gameLabelByNormalized.get(detectedGame);
+                        if (mappedLabel) {
+                          desiredGames.add(mappedLabel);
+                          const mappedScript = gameAliasToScript.get(detectedGame);
+                          if (mappedScript) desiredServerScripts.add(mappedScript);
+                          aiGameMatches += 1;
+                        }
+                      }
+                    } else {
+                      console.log(`#${rawIssue.number}: AI fallback skipped (HTTP ${res.status})`);
+                    }
+                  } catch (err) {
+                    console.log(`#${rawIssue.number}: AI fallback error: ${err.message}`);
+                  }
+                }
+
                 for (const gameLabel of desiredGames) {
                   const mappedScript = gameAliasToScript.get(normalizeName(gameLabel.slice(6)));
                   if (mappedScript) desiredServerScripts.add(mappedScript);
@@ -1352,6 +1450,9 @@ jobs:
                 [
                   { data: 'Requested state', header: true },
                   { data: 'Limit', header: true },
+                  { data: 'AI fallback', header: true },
+                  { data: 'AI attempts', header: true },
+                  { data: 'AI matches', header: true },
                   { data: 'Target issues', header: true },
                   { data: 'Processed', header: true },
                   { data: 'Failures', header: true },
@@ -1359,6 +1460,9 @@ jobs:
                 [
                   state,
                   limit === 0 ? 'all' : String(limit),
+                  useAiGameFallback ? 'enabled' : 'disabled',
+                  String(aiGameAttempts),
+                  String(aiGameMatches),
                   String(selectedTargets.length),
                   String(processed),
                   String(failedIssues.length),
