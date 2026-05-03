@@ -1206,46 +1206,40 @@ jobs:
                   }
                 }
 
-                // Apply changes (locked issues reject REST label mutations)
+                // Apply changes
                 const finalAdds = [...labelsToAdd].filter((label) => !existingLabels.has(label));
                 const finalRemoves = [...labelsToRemove].filter((label) => existingLabels.has(label));
 
                 let labelAdded = 0;
                 let labelRemoved = 0;
 
-                if (isLocked && (finalAdds.length > 0 || finalRemoves.length > 0)) {
-                  console.log(
-                    `#${rawIssue.number}: issue is locked — skipping ${finalAdds.length} add(s) and ${finalRemoves.length} remove(s)`
-                  );
-                } else {
-                  for (const label of finalRemoves) {
-                    try {
-                      await github.rest.issues.removeLabel({
-                        owner,
-                        repo,
-                        issue_number: rawIssue.number,
-                        name: label,
-                      });
-                      labelRemoved += 1;
-                      console.log(`#${rawIssue.number}: removed "${label}"`);
-                    } catch (err) {
-                      console.log(`#${rawIssue.number}: could not remove "${label}": ${err.message}`);
-                    }
+                for (const label of finalRemoves) {
+                  try {
+                    await github.rest.issues.removeLabel({
+                      owner,
+                      repo,
+                      issue_number: rawIssue.number,
+                      name: label,
+                    });
+                    labelRemoved += 1;
+                    console.log(`#${rawIssue.number}: removed "${label}"`);
+                  } catch (err) {
+                    console.log(`#${rawIssue.number}: could not remove "${label}": ${err.message}`);
                   }
+                }
 
-                  for (const label of finalAdds) {
-                    try {
-                      await github.rest.issues.addLabels({
-                        owner,
-                        repo,
-                        issue_number: rawIssue.number,
-                        labels: [label],
-                      });
-                      labelAdded += 1;
-                      console.log(`#${rawIssue.number}: added "${label}"`);
-                    } catch (err) {
-                      console.log(`#${rawIssue.number}: could not add "${label}": ${err.message}`);
-                    }
+                for (const label of finalAdds) {
+                  try {
+                    await github.rest.issues.addLabels({
+                      owner,
+                      repo,
+                      issue_number: rawIssue.number,
+                      labels: [label],
+                    });
+                    labelAdded += 1;
+                    console.log(`#${rawIssue.number}: added "${label}"`);
+                  } catch (err) {
+                    console.log(`#${rawIssue.number}: could not add "${label}": ${err.message}`);
                   }
                 }
 
