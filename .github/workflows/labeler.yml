@@ -176,6 +176,14 @@ jobs:
             function inferTypeFromTitle(issueTitle) {
               if (/^\[bug\]/i.test(issueTitle)) return 'type: bug';
               if (/\bserver\s+request\b/i.test(issueTitle)) return 'type: game server request';
+              const hasBracketPrefix = /^\[[^\]]+\]/.test(issueTitle || '');
+              const isServerCreation =
+                /\bserver\s+creation\b/i.test(issueTitle) ||
+                (hasBracketPrefix && /\bcreation\b/i.test(issueTitle));
+              const isServerSupportRequest =
+                /\bserver\s+support\b/i.test(issueTitle) ||
+                (/\bsupport\s+for\b/i.test(issueTitle) && /\bserver\b/i.test(issueTitle));
+              if (isServerCreation || isServerSupportRequest) return 'type: game server request';
               if (/^\[feature\]/i.test(issueTitle)) return 'type: feature';
               if (/^\[server request\]/i.test(issueTitle)) return 'type: game server request';
               if (/^\[docs?\]/i.test(issueTitle)) return 'type: docs';
@@ -912,6 +920,14 @@ jobs:
             function inferTypeFromTitle(issueTitle) {
               if (/^\[bug\]/i.test(issueTitle)) return 'type: bug';
               if (/\bserver\s+request\b/i.test(issueTitle)) return 'type: game server request';
+              const hasBracketPrefix = /^\[[^\]]+\]/.test(issueTitle || '');
+              const isServerCreation =
+                /\bserver\s+creation\b/i.test(issueTitle) ||
+                (hasBracketPrefix && /\bcreation\b/i.test(issueTitle));
+              const isServerSupportRequest =
+                /\bserver\s+support\b/i.test(issueTitle) ||
+                (/\bsupport\s+for\b/i.test(issueTitle) && /\bserver\b/i.test(issueTitle));
+              if (isServerCreation || isServerSupportRequest) return 'type: game server request';
               if (/^\[feature\]/i.test(issueTitle)) return 'type: feature';
               if (/^\[server request\]/i.test(issueTitle)) return 'type: game server request';
               if (/^\[docs?\]/i.test(issueTitle)) return 'type: docs';
