@@ -183,6 +183,20 @@ jobs:
               return { labels, scripts };
             }
 
+            function hasAliasHitForLabel(text, targetLabel, gameAliasToLabel) {
+              const normalizedText = normalizeName(text);
+              if (!normalizedText || !targetLabel) return false;
+
+              const paddedText = ` ${normalizedText} `;
+              for (const [alias, label] of gameAliasToLabel.entries()) {
+                if (label !== targetLabel) continue;
+                if (alias.length < 3) continue;
+                if (paddedText.includes(` ${alias} `)) return true;
+              }
+
+              return false;
+            }
+
             function parseServerlistCsv(csvText) {
               const rows = [];
               const lines = (csvText || '').split(/\r?\n/);
@@ -1344,10 +1358,28 @@ jobs:
                         const mappedLabel =
                           gameAliasToLabel.get(detectedGame) || gameLabelByNormalized.get(detectedGame);
                         if (mappedLabel) {
-                          desiredGames.add(mappedLabel);
-                          const mappedScript = gameAliasToScript.get(detectedGame);
-                          if (mappedScript) desiredServerScripts.add(mappedScript);
-                          aiGameMatches += 1;
+                          const hasAliasEvidence = hasAliasHitForLabel(
+                            `${title}\n${body}`,
+                            mappedLabel,
+                            gameAliasToLabel
+                          );
+                          if (hasAliasEvidence) {
+                            desiredGames.add(mappedLabel);
+                            const mappedScript = gameAliasToScript.get(detectedGame);
+                            if (mappedScript) desiredServerScripts.add(mappedScript);
+                            aiGameMatches += 1;
+                            console.log(
+                              `#${rawIssue.number}: AI fallback accepted game "${mappedLabel}" from "${parsed?.detected_game}"`
+                            );
+                          } else {
+                            console.log(
+                              `#${rawIssue.number}: AI fallback rejected game "${mappedLabel}" (no literal alias evidence in issue text)`
+                            );
+                          }
+                        } else {
+                          console.log(
+                            `#${rawIssue.number}: AI fallback returned unmapped game "${parsed?.detected_game}"`
+                          );
                         }
                       }
                     } else {
