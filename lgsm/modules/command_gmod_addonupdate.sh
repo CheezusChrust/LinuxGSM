@@ -14,10 +14,9 @@ fn_gmod_addonupdate() {
 	local addonsdir="${executabledir}/garrysmod/addons"
 
 	if [ ! -d "${addonsdir}" ]; then
-		fn_print_error_nl "Addons directory not found: ${addonsdir}"
-		fn_script_log_error "Addons directory not found: ${addonsdir}"
-		exitcode=1
-		core_exit.sh
+		fn_print_info_nl "No addons directory found: ${addonsdir}"
+		fn_script_log_info "No addons directory found: ${addonsdir}"
+		return
 	fi
 
 	fn_print_dots "Updating GMod addons"
@@ -29,7 +28,7 @@ fn_gmod_addonupdate() {
 	if [ -z "${git_dirs}" ]; then
 		fn_print_info_nl "No git-based addons found in ${addonsdir}"
 		fn_script_log_info "No git-based addons found in ${addonsdir}"
-		core_exit.sh
+		return
 	fi
 
 	local update_count=0

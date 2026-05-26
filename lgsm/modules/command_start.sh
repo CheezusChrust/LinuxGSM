@@ -250,7 +250,9 @@ core_logs.sh
 
 # Update GMod git-based addons before starting.
 if [ "${shortname}" == "gmod" ]; then
+	exitbypass=1
 	command_gmod_addonupdate.sh
+	fn_firstcommand_reset
 	commandaction="Starting"
 fi
 
