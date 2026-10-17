@@ -377,7 +377,7 @@ fn_monitor_query() {
 		done
 		# Second counter will wait for 5s before breaking loop.
 		for seconds in {1..5}; do
-			fn_print_fail "Querying port: ${querymethod}: ${ip}:${queryport} : ${totalseconds}/${queryattempt}"
+			fn_print_fail "Querying port: ${querymethod}: ${queryip}:${queryport} : ${totalseconds}/${queryattempt}"
 			fn_print_wait_eol
 			fn_sleep_time_1
 			totalseconds=$((totalseconds + 1))
